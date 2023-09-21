@@ -3,7 +3,7 @@ import aiohttp
 import argparse
 import asyncio
 from datetime import datetime
-from multiprocessing import Pool
+from billiard import Pool
 
 
 GOOGLE_SUGGEST_API_URL = (
@@ -11,7 +11,6 @@ GOOGLE_SUGGEST_API_URL = (
 )
 
 
-# Fetch suggestions from the Google API URL
 async def fetch_suggestions(keyword, session):
     async with session.get(GOOGLE_SUGGEST_API_URL.format(keyword)) as response:
         suggestions = await response.text()
@@ -19,7 +18,6 @@ async def fetch_suggestions(keyword, session):
         return suggestions
 
 
-# Check if a keyword is likely misspelled
 def is_misspelled(keyword, suggestions):
     if not suggestions:
         return True
@@ -40,24 +38,20 @@ def is_misspelled(keyword, suggestions):
     return False
 
 
-# Process keywords using multiprocessing
 def process_keywords(keyword):
     async def main():
         async with aiohttp.ClientSession() as session:
             suggestions = await fetch_suggestions(keyword, session)
             misspelled = is_misspelled(keyword, suggestions)
 
-        # Create a dictionary to store the results
         result = {
             "keyword": keyword,
             "misspelled": misspelled,
             "suggestions": suggestions
         }
 
-        # Convert the result dictionary to a JSON string
         result_json = json.dumps(result, indent=4)
 
-        # Print the JSON result
         print(result_json)
 
     asyncio.run(main())
@@ -70,7 +64,6 @@ if __name__ == "__main__":
 
     start = datetime.now()
 
-    # Create a multiprocessing pool
     with Pool() as pool:
         pool.map(process_keywords, args.keywords)
 
